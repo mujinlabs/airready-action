@@ -1,0 +1,48 @@
+name: "Mujin airready"
+description: "Fail CI when your live site falls below an AI-readiness score/grade (llms.txt, AI-bot policy, structured data, SSR)."
+author: "Mujin Labs"
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  url:
+    description: "The URL to grade (usually your production or preview site)."
+    required: true
+  min-score:
+    description: "Fail the job if the AI-readiness score is below this (0-100). Leave blank to skip."
+    required: false
+    default: ""
+  min-grade:
+    description: "Fail the job if the grade is below this (A best, F worst). Leave blank to skip."
+    required: false
+    default: ""
+  version:
+    description: "mujin-airready version to install (pinned for reproducibility)."
+    required: false
+    default: "0.1.0"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install airready
+      shell: bash
+      run: pipx install "mujin-airready==${{ inputs.version }}"
+
+    - name: Grade site
+      shell: bash
+      # Exit 1 when the live site regresses below the threshold -> blocks the
+      # deploy / fails the nightly check. With no threshold set it just reports.
+      run: |
+        args=(scan "${{ inputs.url }}")
+        if [ -n "${{ inputs.min-score }}" ]; then
+          args+=(--min-score "${{ inputs.min-score }}")
+        fi
+        if [ -n "${{ inputs.min-grade }}" ]; then
+          args+=(--min-grade "${{ inputs.min-grade }}")
+        fi
+        airready "${args[@]}"

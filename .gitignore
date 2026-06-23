@@ -1,0 +1,4 @@
+# local throwaway scratch — never part of the action
+_verify_*.py
+__pycache__/
+*.pyc

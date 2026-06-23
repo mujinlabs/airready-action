@@ -1,0 +1,32 @@
+name: test
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Dogfood: airready.mujinlabs.com grades 100/A on its own grader, so a
+      # high bar passes deterministically and an impossible bar must fail.
+      - name: Action passes when the site meets the bar
+        uses: ./
+        with:
+          url: https://airready.mujinlabs.com
+          min-grade: A
+
+      - name: Action gates when the bar is unreachable (should fail)
+        id: gate
+        continue-on-error: true
+        uses: ./
+        with:
+          url: https://airready.mujinlabs.com
+          min-score: "101"   # no site can score >100 -> the gate must trip
+
+      - name: Assert the gate correctly failed
+        run: |
+          if [ "${{ steps.gate.outcome }}" != "failure" ]; then
+            echo "FAIL: expected the action to gate (fail) on an unreachable threshold"
+            exit 1
+          fi
+          echo "OK: action correctly failed the build below threshold"
