@@ -20,7 +20,7 @@ inputs:
   version:
     description: "mujin-airready version to install (pinned for reproducibility)."
     required: false
-    default: "0.1.0"
+    default: "0.1.1"
 
 runs:
   using: "composite"
